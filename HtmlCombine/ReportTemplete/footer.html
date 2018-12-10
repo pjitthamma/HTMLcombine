@@ -1,0 +1,280 @@
+ </div>
+        </div>
+        <div id='modal1' class='modal'>
+            <div class='modal-content'>
+                <h4><!--%FILENAME%--> RunInfo</h4>
+                <table class='bordered'>
+                    <tr><th>Param</th><th>Value</th></tr>
+                    <tr>
+                        <td>TestResult File</td><td>TestResult.xml</td>
+                    </tr><tr>
+                        <td>Duration</td><td>155.43 ms</td>
+                    </tr><tr>
+                        <td>Platform</td><td>Win32NT</td>
+                    </tr><tr>
+                        <td>Os Version</td><td>Microsoft Windows NT 6.1.7601 Service Pack 1</td>
+                    </tr>><tr>
+                        <td>TestRunner</td><td>NUnit</td>
+                    </tr><tr>
+                        <td>TestRunner Version</td><td>2.6.4.14350</td>
+                    </tr><!--%RUNINFO%-->
+                </table>
+            </div>
+            <div class='modal-footer'>
+                <a href='#!' class='modal-action modal-close waves-effect waves-green btn-flat'>Close</a>
+            </div>
+            <div class='hidden total-tests'>37</div>
+            <div class='hidden total-passed'>36</div>
+            <div class='hidden total-failed'>1</div>
+            <div class='hidden total-inconclusive'>0</div>
+            <div class='hidden total-errors'>0</div>
+            <div class='hidden total-skipped'>0</div>
+        </div>
+        <div id='modal2' class='modal'>
+            <div class='modal-content'>
+                <h4>Console Log</h4>
+                <!--%CONSOLELOGS%-->
+            </div>
+            <div class='modal-footer'>
+                <a href='#!' class='modal-action modal-close waves-effect waves-green btn-flat'>Close</a>
+            </div>
+        </div>
+    </body>
+    <script src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/masonry/3.2.2/masonry.pkgd.min.js' type='text/javascript' charset='utf-8'></script>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/materialize/0.96.1/js/materialize.min.js'></script>
+    <script type='text/javascript'>
+        google.load('visualization', '1', { packages: ['corechart'] });
+        $(document).ready(function () {
+            $('select').material_select();
+            $('.modal-trigger').leanModal();
+            $('.tooltipped').tooltip({ delay: 20 });
+            $('.button-collapse').sideNav({ menuWidth: 280 });
+            $('.fixture-content .card-content').each(function () {
+                if ($(this).text().trim() == '') {
+                    $(this).hide();
+                }
+            });
+            resetFilters();
+            /*
+            var total = parseInt($('.total-tests').text());
+            var passed = parseInt($('.total-passed').text());
+            var failed = parseInt($('.total-failed').text());
+            var inconclusive = parseInt($('.total-inconclusive').text());
+            var errors = parseInt($('.total-errors').text());
+            var skipped = parseInt($('.total-skipped').text());
+            */
+            var passed = $('.test-result.passed').length;
+            var failed = $('.test-result.failed').length;
+            var inconclusive = $('.test-result.inconclusive').length;
+            var errors = $('.test-result.error').length;
+            var skipped = $('.test-result.skipped').length;
+            var total = passed + failed + inconclusive + errors + skipped;
+            $('.nav.nav-sidebar a').filter(function () {
+                return this.href.match(/[^\/]+$/)[0] == document.location.pathname.match(/[^\/]+$/)[0];
+            }).parent().addClass('active');
+            var $container = $('.fixtures').masonry({
+                percentPosition: true
+            });
+            $(document).ready(sizing);
+            $(window).resize(sizing);
+            function sizing() {
+                $('.fixtures .s12').css('width', '99%');
+                /*
+	            if ($(window).width() > 1650) {
+		            $('.fixtures .s4').css('width', '33.33%');
+	            } else if ($(window).width() < 1120) {
+		            $('.fixtures .s4').css('width', '99%');
+	            } else {
+		            $('.fixtures .s4').css('width', '49%');
+	            }
+                */
+                $('.fixtures').masonry();
+            }
+            $container.on('click', '.card-panel', function (evt) {
+                var cls = evt.target.className;
+                cls = evt.target.nodeName.toLowerCase();
+                if (cls.indexOf('div') >= 0 || cls.indexOf('span') >= 0) {
+                    var elm = $(this);
+                    var content = elm.find('.fixture-content');
+                    cls = '';
+                    if (content.is(':visible')) {
+                        elm.removeClass('is-expanded has-pre');
+                        content.hide(0);
+                    }
+                    else {
+                        /*
+                        if (!$('.toggle-type input').prop('checked'))
+                            $('.fixtures .card-panel').removeClass('is-expanded').find('.fixture-content').hide(0);
+                        */
+                        if (elm.find('pre').length > 0) cls = 'has-pre';
+                        elm.addClass('is-expanded ' + cls);
+                        content.fadeIn(200);
+                    }
+                    $container.masonry();
+                }
+            });
+            $('.menu li').click(function (evt) {
+                var elm = $(this).children('span');
+                if (elm.hasClass('selected'))
+                    return;
+                $('#' + $('.menu span.selected').removeClass('selected').attr('class')).hide(0);
+                $('#' + elm.attr('class')).fadeIn(200); elm.addClass('selected');
+            });
+            $('.suite-toggle li').click(function () {
+                var opt = $(this).text().toLowerCase();
+                if (opt != 'choose your option') {
+                    if (opt == 'clear filters') {
+                        resetFilters();
+                    } else if (opt == 'rerun') {
+                        $('.fixtures .card-panel').hide(0);
+                        $('.fixture-result').closest('.card-panel').has('.round-label.round2').show(0);
+                    } else {
+                        $('.fixtures .card-panel').hide(0);
+                        $('.fixture-result.' + opt).closest('.card-panel').show(0);
+                    }
+                    $('.fixtures').masonry();
+                }
+            });
+            $('.tests-toggle li').click(function () {
+                var opt = $(this).text().toLowerCase();
+                if (opt != 'choose your option') {
+                    if (opt == 'clear filters') {
+                        resetFilters();
+                    } else if (opt == 'latest') {
+                        if ($('tr.has-filter').length > 0)
+                            resetFilters();
+                        $('.fixture-content td:nth-child(2)').not(':has(.interest)').parent().addClass('has-filter').hide(0);
+                        hideEmptyPanels();
+                    } else {
+                        if ($('tr.has-filter').length > 0)
+                            resetFilters();
+                        $('.fixture-content td:nth-child(2)').not('.' + opt).parent().addClass('has-filter').hide(0);
+                        hideEmptyPanels();
+                    }
+                    $('.fixtures').masonry();
+                }
+            });
+            $('.feature-toggle li').click(function () {
+                var opt = $(this).text();
+                if (opt.toLowerCase() != 'choose your option') {
+                    if (opt.toLowerCase() == 'clear filters') {
+                        resetFilters();
+                    }
+                    else {
+                        filterByCategory(opt);
+                    }
+                }
+                $('.fixtures').masonry();
+            });
+            if (document.location.href.indexOf('?') > -1) {
+                var evt = window.location.search.split('?')[1];
+                switch (evt.toLowerCase()) {
+                    case 'passedtests': clickListItem('tests-toggle', 1); break;
+                    case 'failedtests': clickListItem('tests-toggle', 2); break;
+                    case 'errortests': clickListItem('tests-toggle', 3); break;
+                    case 'inconclusivetests': clickListItem('tests-toggle', 4); break;
+                    case 'skippedtests': clickListItem('tests-toggle', 5); break;
+                    case 'latesttests': clickListItem('tests-toggle', 6); break;
+                    case 'passedsuites': clickListItem('suite-toggle', 1); break;
+                    case 'failedsuites': clickListItem('suite-toggle', 2); break;
+                    case 'errorsuites': clickListItem('suite-toggle', 3); break;
+                    case 'inconclusivesuites': clickListItem('suite-toggle', 4); break;
+                    case 'skippedsuites': clickListItem('suite-toggle', 5); break;
+                    case 'rerunsuites': clickListItem('suite-toggle', 6); break;
+                    default: break;
+                }
+            }
+            function filterByCategory(cat) {
+                resetFilters();
+                $('.fixture-content .card-panel').show(0);
+                $('td.test-features').each(function () {
+                    if (!($(this).hasClass(cat))) {
+                        $(this).closest('tr').addClass('has-filter').hide(0);
+                    }
+                });
+                hideEmptyPanels();
+                $('.fixtures').masonry();
+            }
+            function hideEmptyPanels() {
+                $('.fixture-content').filter(function () {
+                    return ($(this).find('tr.has-filter').length == $(this).find('tr').length - 1);
+                }).closest('.card-panel').hide(0);
+            }
+            function resetFilters() {
+                $('.fixtures .card-panel').show(0);
+                $('tr').removeClass('has-filter').show();
+                $('.suite-toggle li:first-child, .tests-toggle li:first-child, .feature-toggle li:first-child').click();
+            }
+            function clickListItem(listClass, index) {
+                $('.' + listClass).find('li').get(index).click();
+            }
+            var passedPercentage = Math.round(((passed / total) * 100)) + '%';
+            $('.pass-percentage').text(passedPercentage);
+            $('.dashboard .determinate').attr('style', 'width:' + passedPercentage);
+            google.setOnLoadCallback(suitesChart);
+            google.setOnLoadCallback(testsChart);
+            function suitesChart() {
+                var data = google.visualization.arrayToDataTable([
+					['Test Status', 'Count'],
+					['Pass', $('.fixture-result.passed').length],
+					['Fail', $('.fixture-result.failed').length],
+					['Inconclusive', $('.fixture-result.inconclusive').length],
+					['Error', $('.fixture-result.error').length],
+					['Skipped', $('.fixture-result.skipped').length]
+                ]);
+                var options = {
+                    backgroundColor: { fill: 'transparent' },
+                    chartArea: { 'width': '92%', 'height': '100%' },
+                    colors: ['#00af00', 'red', 'orange', 'tomato', 'dodgerblue'],
+                    fontName: 'Nunito',
+                    fontSize: '11',
+                    titleTextStyle: { color: '#1366d7', fontSize: '14' },
+                    pieHole: 0.55,
+                    height: 180,
+                    pieSliceText: 'value',
+                    width: 200
+                };
+                var chart = new google.visualization.PieChart(document.getElementById('suites-dashboard'));
+                chart.draw(data, options);
+            }
+            function testsChart() {
+                var data = google.visualization.arrayToDataTable([
+					['Test Status', 'Count'],
+					//['Pass', passed],
+					//['Fail', failed],
+					//['Inconclusive', inconclusive],
+					//['Error', errors],
+					//['Skipped', skipped]
+                    ['Pass', $('.test-result.passed').length],
+					['Fail', $('.test-result.failed').length],
+					['Inconclusive', $('.test-result.inconclusive').length],
+					['Error', $('.test-result.error').length],
+					['Skipped', $('.test-result.skipped').length]
+                ]);
+                var options = {
+                    backgroundColor: { fill: 'transparent' },
+                    chartArea: { 'width': '92%', 'height': '100%' },
+                    colors: ['#00af00', 'red', 'orange', 'tomato', 'dodgerblue'],
+                    fontName: 'Nunito',
+                    fontSize: '11',
+                    titleTextStyle: { color: '#1366d7', fontSize: '14' },
+                    pieHole: 0.55,
+                    height: 180,
+                    pieSliceText: 'value',
+                    width: 200
+                };
+                var chart = new google.visualization.PieChart(document.getElementById('tests-dashboard'));
+                chart.draw(data, options);
+            }
+        });
+        $('.resource-popup').click(function () {
+            var link = $(this).attr('data-pagesource-path');
+            $.get(link, function (data) {
+                var popupWindow = window.open("", "", "scrollbars=yes");
+                popupWindow.document.write(data);
+            }, 'text');
+        })
+    </script>
+</html>
